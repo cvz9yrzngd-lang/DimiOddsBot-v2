@@ -1,4 +1,4 @@
-import sqlite3
+sqlite3
 from config import DATABASE
 
 
@@ -127,8 +127,3 @@ def remove_match(match_name):
 
 def clear_matches():
     conn = connect()
-
-    conn.execute("DELETE FROM matches")
-
-    conn.commit()
-    conn.close()
