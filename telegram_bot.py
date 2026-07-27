@@ -1,6 +1,4 @@
-from telegram import Update
-from telegram.ext import (
-    Application,
+Application,
     CommandHandler,
     ContextTypes,
 )
@@ -31,12 +29,3 @@ class TelegramBot:
     async def send_alert(self, text):
 
         from database import get_users
-
-        for chat_id in get_users():
-            try:
-                await self.app.bot.send_message(
-                    chat_id=chat_id,
-                    text=text,
-                )
-            except Exception:
-                pass
