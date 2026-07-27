@@ -36,5 +36,3 @@ class TelegramBot:
                     chat_id=chat_id,
                     text=text,
                 )
-            except Exception:
-                pass
