@@ -1,9 +1,4 @@
-Application,
-    CommandHandler,
-    ContextTypes,
-)
-
-from database import add_user
+import add_user
 
 
 class TelegramBot:
