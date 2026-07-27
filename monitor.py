@@ -1,44 +1,73 @@
 from datetime import datetime
 
 from alerts import has_changes
-from database import get_matches, update_match
-from odds_api import get_match
+from database import get_leagues, get_saved_odds, save_odds
+from odds_api import get_odds
 
 
 async def check_matches(bot):
 
-    matches = get_matches()
+    saved_matches = {
+        match["match_id"]: match
+        for match in get_saved_odds()
+    }
 
-    for match in matches:
+    leagues = get_leagues()
 
-        latest = get_match(match["match_name"])
+    for league in leagues:
 
-        if latest is None:
-            continue
+        matches = get_odds(league["league_key"])
 
-        changes = has_changes(
-            match["home"],
-            match["draw"],
-            match["away"],
-            latest["home"],
-            latest["draw"],
-            latest["away"],
-        )
+        for latest in matches:
 
-        if changes:
+            match_id = latest["match_id"]
 
-            text = (
-                f"⚽ {match['match_name']}\n\n"
-                + "\n".join(changes)
-                + f"\n\n🏦 {latest['bookmaker']}"
-                + f"\n🕒 {datetime.now().strftime('%H:%M')}"
+            if match_id not in saved_matches:
+
+                save_odds(
+                    latest["match_id"],
+                    latest["league_key"],
+                    latest["home_team"],
+                    latest["away_team"],
+                    latest["home"],
+                    latest["draw"],
+                    latest["away"],
+                    latest["kickoff"],
+                    latest["last_update"],
+                )
+
+                continue
+
+            old = saved_matches[match_id]
+
+            changes = has_changes(
+                old["home"],
+                old["draw"],
+                old["away"],
+                latest["home"],
+                latest["draw"],
+                latest["away"],
             )
 
-            await bot.send_alert(text)
+            if changes:
 
-        update_match(
-            match["id"],
-            latest["home"],
-            latest["draw"],
-            latest["away"],
-        )
+                text = (
+                    f"⚽ {latest['home_team']} - {latest['away_team']}\n"
+                    f"🏆 {league['league_name']}\n\n"
+                    + "\n".join(changes)
+                    + f"\n\n🕒 {datetime.now().strftime('%H:%M')}"
+                )
+
+                await bot.send_alert(text)
+
+            save_odds(
+                latest["match_id"],
+                latest["league_key"],
+                latest["home_team"],
+                latest["away_team"],
+                latest["home"],
+                latest["draw"],
+                latest["away"],
+                latest["kickoff"],
+                latest["last_update"],
+            )
