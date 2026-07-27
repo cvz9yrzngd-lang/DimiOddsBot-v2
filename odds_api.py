@@ -1,68 +1,88 @@
 import requests
+import logging
 
 from config import (
     ODDS_API_KEY,
     SPORT,
-    REGION,
-    BOOKMAKER,
+    REGIONS,
+    BOOKMAKERS,
+    MARKETS,
+    ODDS_FORMAT
 )
 
-BASE_URL = "https://api.the-odds-api.com/v4/sports"
+BASE_URL = "https://api.the-odds-api.com/v4"
 
 
-def get_match(match_name):
-    url = f"{BASE_URL}/{SPORT}/odds"
-
-    params = {
-        "apiKey": ODDS_API_KEY,
-        "regions": REGION,
-        "markets": "h2h",
-        "bookmakers": BOOKMAKER,
-        "oddsFormat": "decimal",
-    }
+def get_soccer_leagues():
+    """
+    Връща всички налични футболни лиги.
+    """
 
     try:
-        response = requests.get(url, params=params, timeout=20)
+        response = requests.get(
+            f"{BASE_URL}/sports",
+            params={
+                "apiKey": ODDS_API_KEY
+            },
+            timeout=20
+        )
+
         response.raise_for_status()
 
-        matches = response.json()
+        sports = response.json()
 
-        for match in matches:
+        football = []
 
-            full_name = (
-                f"{match['home_team']} - "
-                f"{match['away_team']}"
-            )
+        for sport in sports:
+            if sport["key"].startswith("soccer_"):
+                football.append(sport)
 
-            if full_name.lower() != match_name.lower():
-                continue
+        logging.info(f"Намерени лиги: {len(football)}")
 
-            bookmaker = match["bookmakers"][0]
-            market = bookmaker["markets"][0]
+        return football
 
-            home = None
-            draw = None
-            away = None
+    except Exception as e:
+        logging.error(f"League error: {e}")
+        return []
 
-            for outcome in market["outcomes"]:
 
-                if outcome["name"] == match["home_team"]:
-                    home = outcome["price"]
+def get_league_odds(sport_key):
+    """
+    Връща коефициентите за дадена лига.
+    """
 
-                elif outcome["name"] == "Draw":
-                    draw = outcome["price"]
+    try:
 
-                elif outcome["name"] == match["away_team"]:
-                    away = outcome["price"]
+        response = requests.get(
+            f"{BASE_URL}/sports/{sport_key}/odds",
+            params={
+                "apiKey": ODDS_API_KEY,
+                "regions": REGIONS,
+                "markets": MARKETS,
+                "bookmakers": BOOKMAKERS,
+                "oddsFormat": ODDS_FORMAT
+            },
+            timeout=30
+        )
 
-            return {
-                "bookmaker": bookmaker["title"],
-                "home": home,
-                "draw": draw,
-                "away": away,
-            }
+        remaining = response.headers.get(
+            "x-requests-remaining",
+            "?"
+        )
 
-    except Exception:
-        return None
+        used = response.headers.get(
+            "x-requests-used",
+            "?"
+        )
 
-    return None
+        logging.info(
+            f"Remaining requests: {remaining} | Used: {used}"
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
+    except Exception as e:
+        logging.error(f"Odds error ({sport_key}): {e}")
+        return []
