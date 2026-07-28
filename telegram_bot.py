@@ -1,23 +1,53 @@
-from telegram import Update
+from telegram import (
+    Update,
+    ReplyKeyboardMarkup,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+)
+
 from telegram.ext import (
     Application,
     CommandHandler,
     ContextTypes,
     MessageHandler,
+    CallbackQueryHandler,
     filters,
 )
 
-from database import add_user, get_users, get_leagues
-from keyboards import MAIN_KEYBOARD
+from database import (
+    add_user,
+    add_league,
+    get_users,
+    get_leagues,
+)
+
 from odds_api import get_soccer_leagues
 
 
+MAIN_KEYBOARD = ReplyKeyboardMarkup(
+    [
+        ["📋 Мачове"],
+        ["➕ Добави лига"],
+    ],
+    resize_keyboard=True,
+)
+
+
 class TelegramBot:
+
     def __init__(self, token):
-        self.app = Application.builder().token(token).build()
+
+        self.app = (
+            Application.builder()
+            .token(token)
+            .build()
+        )
 
         self.app.add_handler(
-            CommandHandler("start", self.start)
+            CommandHandler(
+                "start",
+                self.start,
+            )
         )
 
         self.app.add_handler(
@@ -27,15 +57,22 @@ class TelegramBot:
             )
         )
 
+        self.app.add_handler(
+            CallbackQueryHandler(
+                self.callback_handler
+            )
+        )
+
     async def start(
         self,
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ):
+
         add_user(update.effective_chat.id)
 
         await update.message.reply_text(
-            "✅ DimiOddsBot v2 е стартиран.",
+            "✅ DimiOddsBot е стартиран.",
             reply_markup=MAIN_KEYBOARD,
         )
 
@@ -44,65 +81,122 @@ class TelegramBot:
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ):
+
         text = update.message.text
+
+        if text == "➕ Добави лига":
+
+            leagues = get_soccer_leagues()
+
+            if not leagues:
+
+                await update.message.reply_text(
+                    "❌ Не успях да заредя лигите."
+                )
+                return
+
+            keyboard = []
+
+            for league in leagues:
+
+                keyboard.append(
+                    [
+                        InlineKeyboardButton(
+                            league["name"],
+                            callback_data=league["key"],
+                        )
+                    ]
+                )
+
+            await update.message.reply_text(
+                "⚽ Избери лига:",
+                reply_markup=InlineKeyboardMarkup(
+                    keyboard
+                ),
+            )
+
+            return
 
         if text == "📋 Мачове":
 
             leagues = get_leagues()
 
             if not leagues:
+
                 await update.message.reply_text(
-                    "Няма добавени лиги."
+                    "Няма избрани лиги."
                 )
+
                 return
 
-            message = "📋 Следени лиги:\n\n"
+            message = "📋 Следени лиги\n\n"
 
             for league in leagues:
+
                 message += f"• {league['league_name']}\n"
 
-            await update.message.reply_text(message)
+            await update.message.reply_text(
+                message
+            )
+                async def callback_handler(
+        self,
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE,
+    ):
+
+        query = update.callback_query
+
+        await query.answer()
+
+        leagues = get_soccer_leagues()
+
+        selected = None
+
+        for league in leagues:
+
+            if league["key"] == query.data:
+                selected = league
+                break
+
+        if selected is None:
+
+            await query.edit_message_text(
+                "❌ Лигата не беше намерена."
+            )
+
             return
 
-        if text == "➕ Добави":
+        existing = get_leagues()
 
-            leagues = get_soccer_leagues()
+        for league in existing:
 
-            if not leagues:
-                await update.message.reply_text(
-                    "Не успях да заредя лигите."
+            if league["league_key"] == selected["key"]:
+
+                await query.edit_message_text(
+                    f"ℹ️ {selected['name']} вече се следи."
                 )
+
                 return
 
-            message = "⚽ Налични лиги:\n\n"
+        add_league(
+            selected["key"],
+            selected["name"],
+        )
 
-            for league in leagues:
-                message += (
-                    f"{league['key']}\n"
-                    f"{league['name']}\n\n"
-                )
-
-            await update.message.reply_text(message)
-            return
-
-        if text == "❌ Изтрий":
-            await update.message.reply_text(
-                "Функцията ще бъде добавена в следващата стъпка."
-            )
-            return
-
-        if text == "🗑 Изчисти":
-            await update.message.reply_text(
-                "Функцията ще бъде добавена в следващата стъпка."
-            )
-            return
+        await query.edit_message_text(
+            f"✅ Добавена лига:\n\n{selected['name']}"
+        )
 
     async def send_alert(self, text):
+
         for chat_id in get_users():
+
             try:
+
                 await self.app.bot.send_message(
                     chat_id=chat_id,
                     text=text,
                 )
+
             except Exception:
                 pass
