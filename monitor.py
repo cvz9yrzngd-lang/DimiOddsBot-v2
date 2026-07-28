@@ -1,7 +1,12 @@
 from datetime import datetime
 
 from alerts import has_changes
-from database import get_leagues, get_saved_odds, save_odds
+from database import (
+    get_leagues,
+    get_saved_odds,
+    save_odds,
+    delete_match,
+)
 from odds_api import get_odds
 
 
@@ -12,6 +17,8 @@ async def check_matches(bot):
         for match in get_saved_odds()
     }
 
+    active_matches = set()
+
     leagues = get_leagues()
 
     for league in leagues:
@@ -21,6 +28,8 @@ async def check_matches(bot):
         for latest in matches:
 
             match_id = latest["match_id"]
+
+            active_matches.add(match_id)
 
             if match_id not in saved_matches:
 
@@ -71,3 +80,9 @@ async def check_matches(bot):
                 latest["kickoff"],
                 latest["last_update"],
             )
+
+    # Изтриване на приключилите/липсващи мачове
+    for match_id in saved_matches:
+
+        if match_id not in active_matches:
+            delete_match(match_id)
