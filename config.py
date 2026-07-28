@@ -14,7 +14,7 @@ MARKETS = "h2h"
 ODDS_FORMAT = "decimal"
 
 # Monitoring
-CHECK_INTERVAL = 10800      # 3 часа
+CHECK_INTERVAL = 60      # 3 часа
 ALERT_DROP = 0.10           # спад 0.10
 
 # Database
