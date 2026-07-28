@@ -181,3 +181,12 @@ def delete_match(match_id):
 
     conn.commit()
     conn.close()
+    def clear_odds():
+    conn = connect()
+
+    conn.execute(
+        "DELETE FROM odds"
+    )
+
+    conn.commit()
+    conn.close()
