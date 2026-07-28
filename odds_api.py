@@ -1,5 +1,6 @@
 import logging
 import requests
+from datetime import datetime, timezone, timedelta
 
 from config import (
     ODDS_API_KEY,
@@ -55,10 +56,21 @@ def get_soccer_leagues():
 
 def get_odds(league_key):
     """
-    Връща всички мачове и коефициенти за една лига.
+    Връща само днешните мачове и коефициентите им.
     """
 
     try:
+
+        now = datetime.now(timezone.utc)
+
+        start = now.replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+
+        end = start + timedelta(days=1)
 
         response = requests.get(
             f"{BASE_URL}/sports/{league_key}/odds",
@@ -68,6 +80,8 @@ def get_odds(league_key):
                 "bookmakers": BOOKMAKERS,
                 "markets": MARKETS,
                 "oddsFormat": ODDS_FORMAT,
+                "commenceTimeFrom": start.isoformat().replace("+00:00", "Z"),
+                "commenceTimeTo": end.isoformat().replace("+00:00", "Z"),
             },
             timeout=30
         )
