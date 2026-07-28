@@ -9,13 +9,11 @@ from telegram_bot import TelegramBot
 
 
 async def main():
-
     init_db()
 
     bot = TelegramBot(BOT_TOKEN)
 
-    # Първа проверка веднага след стартиране
-    await check_matches(bot)
+    await bot.app.initialize()
 
     scheduler = AsyncIOScheduler()
 
@@ -30,7 +28,8 @@ async def main():
 
     scheduler.start()
 
-    await bot.app.initialize()
+    await check_matches(bot)
+
     await bot.app.start()
     await bot.app.updater.start_polling()
 
