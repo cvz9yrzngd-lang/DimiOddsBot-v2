@@ -14,6 +14,9 @@ async def main():
 
     bot = TelegramBot(BOT_TOKEN)
 
+    # Първа проверка веднага след стартиране
+    await check_matches(bot)
+
     scheduler = AsyncIOScheduler()
 
     scheduler.add_job(
@@ -21,6 +24,8 @@ async def main():
         "interval",
         seconds=CHECK_INTERVAL,
         args=[bot],
+        max_instances=1,
+        coalesce=True,
     )
 
     scheduler.start()
@@ -33,6 +38,8 @@ async def main():
         while True:
             await asyncio.sleep(3600)
     finally:
+        scheduler.shutdown()
+
         await bot.app.updater.stop()
         await bot.app.stop()
         await bot.app.shutdown()
