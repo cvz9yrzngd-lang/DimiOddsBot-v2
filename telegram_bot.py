@@ -37,18 +37,9 @@ class TelegramBot:
 
     def __init__(self, token):
 
-        self.app = (
-            Application.builder()
-            .token(token)
-            .build()
-        )
+        self.app = Application.builder().token(token).build()
 
-        self.app.add_handler(
-            CommandHandler(
-                "start",
-                self.start,
-            )
-        )
+        self.app.add_handler(CommandHandler("start", self.start))
 
         self.app.add_handler(
             MessageHandler(
@@ -58,16 +49,10 @@ class TelegramBot:
         )
 
         self.app.add_handler(
-            CallbackQueryHandler(
-                self.callback_handler
-            )
+            CallbackQueryHandler(self.callback_handler)
         )
 
-    async def start(
-        self,
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE,
-    ):
+    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         add_user(update.effective_chat.id)
 
@@ -95,24 +80,19 @@ class TelegramBot:
                 )
                 return
 
-            keyboard = []
-
-            for league in leagues:
-
-                keyboard.append(
-                    [
-                        InlineKeyboardButton(
-                            league["name"],
-                            callback_data=league["key"],
-                        )
-                    ]
-                )
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        league["name"],
+                        callback_data=league["key"],
+                    )
+                ]
+                for league in leagues
+            ]
 
             await update.message.reply_text(
                 "⚽ Избери лига:",
-                reply_markup=InlineKeyboardMarkup(
-                    keyboard
-                ),
+                reply_markup=InlineKeyboardMarkup(keyboard),
             )
 
             return
@@ -132,31 +112,29 @@ class TelegramBot:
             message = "📋 Следени лиги\n\n"
 
             for league in leagues:
-
                 message += f"• {league['league_name']}\n"
 
-            await update.message.reply_text(
-                message
-            )
-                async def callback_handler(
+            await update.message.reply_text(message)
+
+    async def callback_handler(
         self,
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ):
 
         query = update.callback_query
-
         await query.answer()
 
         leagues = get_soccer_leagues()
 
-        selected = None
-
-        for league in leagues:
-
-            if league["key"] == query.data:
-                selected = league
-                break
+        selected = next(
+            (
+                league
+                for league in leagues
+                if league["key"] == query.data
+            ),
+            None,
+        )
 
         if selected is None:
 
@@ -166,9 +144,7 @@ class TelegramBot:
 
             return
 
-        existing = get_leagues()
-
-        for league in existing:
+        for league in get_leagues():
 
             if league["league_key"] == selected["key"]:
 
