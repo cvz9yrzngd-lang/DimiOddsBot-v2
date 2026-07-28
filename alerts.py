@@ -1,36 +1,35 @@
 from config import ALERT_DROP
 
 
-def has_changes(old_home, old_draw, old_away,
-                new_home, new_draw, new_away):
+def has_changes(
+    old_home,
+    old_draw,
+    old_away,
+    new_home,
+    new_draw,
+    new_away,
+):
+
+    checks = [
+        ("📉 Домакин", old_home, new_home),
+        ("📉 Равен", old_draw, new_draw),
+        ("📉 Гост", old_away, new_away),
+    ]
 
     messages = []
 
-    if (
-        old_home is not None
-        and new_home is not None
-        and old_home - new_home >= ALERT_DROP
-    ):
-        messages.append(
-            f"📉 Домакин: {old_home:.2f} → {new_home:.2f}"
-        )
+    for label, old, new in checks:
 
-    if (
-        old_draw is not None
-        and new_draw is not None
-        and old_draw - new_draw >= ALERT_DROP
-    ):
-        messages.append(
-            f"📉 Равен: {old_draw:.2f} → {new_draw:.2f}"
-        )
+        if (
+            old is None
+            or new is None
+        ):
+            continue
 
-    if (
-        old_away is not None
-        and new_away is not None
-        and old_away - new_away >= ALERT_DROP
-    ):
-        messages.append(
-            f"📉 Гост: {old_away:.2f} → {new_away:.2f}"
-        )
+        if old - new >= ALERT_DROP:
+
+            messages.append(
+                f"{label}: {old:.2f} → {new:.2f}"
+            )
 
     return messages
