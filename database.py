@@ -160,10 +160,7 @@ def get_saved_odds():
     conn = connect()
 
     rows = conn.execute(
-        """
-        SELECT *
-        FROM odds
-        """
+        "SELECT * FROM odds"
     ).fetchall()
 
     conn.close()
@@ -181,7 +178,9 @@ def delete_match(match_id):
 
     conn.commit()
     conn.close()
-    def clear_odds():
+
+
+def clear_odds():
     conn = connect()
 
     conn.execute(
