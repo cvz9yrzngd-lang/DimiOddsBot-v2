@@ -9,11 +9,13 @@ from telegram_bot import TelegramBot
 
 
 async def main():
+
     init_db()
 
     bot = TelegramBot(BOT_TOKEN)
 
-    await bot.app.initialize()
+    # Първа проверка веднага след стартиране
+    await check_matches(bot)
 
     scheduler = AsyncIOScheduler()
 
@@ -28,16 +30,19 @@ async def main():
 
     scheduler.start()
 
-    await check_matches(bot)
-
+    await bot.app.initialize()
     await bot.app.start()
-    await bot.app.updater.start_polling()
 
     try:
+        await bot.app.updater.start_polling(
+            drop_pending_updates=True
+        )
+
         while True:
             await asyncio.sleep(3600)
+
     finally:
-        scheduler.shutdown()
+        scheduler.shutdown(wait=False)
 
         await bot.app.updater.stop()
         await bot.app.stop()
