@@ -1,9 +1,3 @@
-import os
-
-# Telegram
-BOT_TOKEN = os.environ["BOT_TOKEN"]
-
-# The Odds API
 ODDS_API_KEY = os.environ["ODDS_API_KEY"]
 
 # Football
