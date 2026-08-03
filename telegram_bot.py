@@ -1,3 +1,5 @@
+import logging
+
 from telegram import (
     Update,
     ReplyKeyboardMarkup,
@@ -55,6 +57,11 @@ class TelegramBot:
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         add_user(update.effective_chat.id)
+
+        logging.info(
+            "CHAT ID SAVED: %s",
+            update.effective_chat.id,
+        )
 
         await update.message.reply_text(
             "✅ DimiOddsBot е стартиран.",
@@ -165,14 +172,26 @@ class TelegramBot:
 
     async def send_alert(self, text):
 
-        for chat_id in get_users():
+        users = get_users()
+
+        logging.info("USERS IN DATABASE: %s", users)
+
+        for chat_id in users:
 
             try:
+
+                logging.info(
+                    "Sending message to %s",
+                    chat_id,
+                )
 
                 await self.app.bot.send_message(
                     chat_id=chat_id,
                     text=text,
                 )
 
-            except Exception:
-                pass
+                logging.info("Message sent successfully.")
+
+            except Exception as e:
+
+                logging.exception(e)
