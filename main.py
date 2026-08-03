@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import requests
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -21,6 +22,19 @@ async def main():
     init_db()
 
     bot = TelegramBot(BOT_TOKEN)
+
+    logging.info("Checking Telegram token...")
+
+    try:
+        response = requests.get(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/getMe",
+            timeout=20,
+        )
+
+        logging.info("Telegram API response: %s", response.text)
+
+    except Exception:
+        logging.exception("Telegram API check failed")
 
     logging.info("Running first odds check...")
     await check_matches(bot)
